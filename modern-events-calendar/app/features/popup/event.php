@@ -1,0 +1,668 @@
+<?php
+/** no direct access **/
+defined('MECEXEC') or die();
+
+/** @var MEC_feature_events $this */
+
+// MEC Settings
+$settings = $this->main->get_settings();
+
+// Post Object
+$post = new stdClass();
+$post->ID = 0;
+
+// Features
+$feature_colors = new MEC_feature_colors();
+
+$allday = 0;
+$start_date = date('Y-m-d', strtotime('Tomorrow'));
+$start_time_hour = 8;
+$start_time_minutes = 0;
+$start_time_ampm = 'AM';
+$end_date = $start_date;
+$end_time_hour = 6;
+$end_time_minutes = 0;
+$end_time_ampm = 'PM';
+
+$locations = get_terms('mec_location', array('orderby'=>'name', 'hide_empty'=>'0'));
+$location_id = 1;
+$dont_show_map = 1;
+
+$organizers = get_terms('mec_organizer', array('orderby'=>'name', 'hide_empty'=>'0'));
+$organizer_id = 1;
+$wizard_page = isset($_REQUEST['page']) ? sanitize_text_field($_REQUEST['page']) : '';
+$main_page = isset($_REQUEST['post_type']) ? sanitize_text_field($_REQUEST['post_type']) : '';
+
+// This date format used for input type of datepicker.
+$datepicker_format = (isset($settings['datepicker_format']) and trim($settings['datepicker_format'])) ? $settings['datepicker_format'] : 'Y-m-d';
+
+if(!isset($post_type)) $post_type = NULL;
+
+$step = 1;
+?>
+<div id="mec_popup_event" class="lity-hide">
+    <div class="mec-steps-container">
+        <img src="<?php echo plugin_dir_url(__FILE__ ) . '../../../assets/img/mec-logo-icon.svg'; ?>"  style="width: 50px"/>
+        <ul>
+            <li class="mec-step mec-step-<?php echo esc_attr($step); ?>"><span><?php echo $step++; ?></span></li>
+            <li class="mec-step mec-step-<?php echo esc_attr($step); ?>"><span><?php echo $step++; ?></span></li>
+            <li class="mec-step mec-step-<?php echo esc_attr($step); ?>"><span><?php echo $step++; ?></span></li>
+            <?php if(!isset($settings['organizers_status']) || $settings['organizers_status']): ?>
+            <li class="mec-step mec-step-<?php echo esc_attr($step); ?>"><span><?php echo $step++; ?></span></li>
+            <?php endif; ?>
+            <li class="mec-step mec-step-<?php echo esc_attr($step); ?>"><span><?php echo $step++; ?></span></li>
+            <li class="mec-step mec-step-<?php echo esc_attr($step); ?>"><span><?php echo $step++; ?></span></li>
+            <li class="mec-step mec-step-<?php echo esc_attr($step); ?>"><span><?php echo $step++; ?></span></li>
+            <li class="mec-step mec-step-<?php echo esc_attr($step); ?>"><span><?php echo $step; $step = 1; ?></span></li>
+        </ul>
+    </div>
+    <div class="mec-steps-panel">
+        <div id="mec_popup_event_form">
+            <div class="mec-steps-content-container">
+                <div class="mec-steps-header">
+                    <div class="mec-steps-header-userinfo">
+                        <?php $user = wp_get_current_user(); ?>
+                        <?php if(get_option('show_avatars')): ?>
+                        <span class="mec-steps-header-img"><img src="<?php echo esc_url(get_avatar_url($user->ID)); ?>" /></span>
+                        <?php endif; ?>
+                        <span class="mec-steps-header-name"><?php echo esc_html($user->display_name); ?></span>
+                        <span class="mec-steps-header-add-text"><?php esc_html_e('Adding an Event...', 'mec') ?></span>
+                    </div>
+                    <div class="mec-steps-header-settings">
+                        <a href="<?php echo admin_url('admin.php?page=MEC-settings'); ?>"><i class="mec-sl-settings"></i><?php esc_html_e('Settings', 'mec'); ?></a>
+                    </div>
+                </div>
+                <div class="mec-steps-content mec-steps-content-<?php echo $step++; ?>">
+                    <?php wp_nonce_field('mec_event_popup', '_mecnonce'); ?>
+                    <input type="text" name="mec[title]" placeholder="<?php esc_attr_e('Event Name', 'mec'); ?>" id="mec_event_name">
+                    <p class="popup-sh-name-required"><?php esc_html_e('Event name is required', 'mec'); ?></p>
+
+                    <?php $feature_colors->meta_box_colors($post); ?>
+                </div>
+                <div class="mec-steps-content mec-steps-content-<?php echo $step++; ?>">
+                    <div id="mec_meta_box_date_form">
+                        <div class="mec-form-row">
+                            <div class="mec-col-4">
+                                <input type="text" name="mec[date][start][date]" id="mec_start_date_popup" class="mec-date-picker"
+                                       value="<?php echo esc_attr( $this->main->standardize_format( $start_date, $datepicker_format ) ); ?>"
+                                       placeholder="<?php esc_html_e('Start Date', 'mec'); ?>" autocomplete="off"/>
+                            </div>
+                            <div class="mec-col-6 mec-time-picker <?php echo ($allday == 1) ? 'mec-util-hidden' : ''; ?>">
+                            <?php $this->main->timepicker(array(
+                                'method' => $settings['time_format'] ?? 12,
+                                'time_hour' => $start_time_hour,
+                                'time_minutes' => $start_time_minutes,
+                                'time_ampm' => $start_time_ampm,
+                                'name' => 'mec[date][start]',
+                                'id_key' => 'start_',
+                                'include_h0' => true,
+                            )); ?>
+                        </div>
+                        </div>
+                        <div class="mec-form-row">
+                            <div class="mec-col-4">
+                                <input type="text" name="mec[date][end][date]" id="mec_end_date_popup" class="mec-date-picker"
+                                       value="<?php echo esc_attr( $this->main->standardize_format( $end_date, $datepicker_format ) ); ?>" placeholder="<?php esc_html_e('End Date', 'mec'); ?>"
+                                       autocomplete="off"/>
+                            </div>
+                            <div class="mec-col-6 mec-time-picker <?php echo ($allday == 1) ? 'mec-util-hidden' : ''; ?>">
+                                <?php $this->main->timepicker(array(
+                                    'method' => $settings['time_format'] ?? 12,
+                                    'time_hour' => $end_time_hour,
+                                    'time_minutes' => $end_time_minutes,
+                                    'time_ampm' => $end_time_ampm,
+                                    'name' => 'mec[date][end]',
+                                    'id_key' => 'end_',
+                                )); ?>
+                            </div>
+                        </div>
+                        <div class="mec-form-row mec-all-day-event">
+                            <label for="mec_allday">
+                                <input type="checkbox" name="mec[date][allday]" id="mec_allday" value="1"
+                                       onchange="jQuery('.mec-time-picker').toggle();"/>
+                                       <?php esc_html_e('All-day Event', 'mec'); ?>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mec-steps-content mec-steps-content-<?php echo $step++; ?>">
+                    <div id="mec-location">
+                        <div class="mec-form-row">
+                            <select name="mec[location_id]" id="mec_popup_location_id" class="mec_popup_location_id wn-mec-select-popup" title="<?php echo esc_attr__($this->main->m('taxonomy_location', esc_html__('Location', 'mec')), 'mec'); ?>">
+                                <option value="1"><?php esc_html_e('Hide location', 'mec'); ?></option>
+                                <?php foreach($locations as $location): ?>
+                                    <option <?php if($location_id == $location->term_id) echo 'selected="selected"'; ?> value="<?php echo esc_attr($location->term_id); ?>"><?php echo esc_html($location->name); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <span class="mec-tooltip">
+                                <div class="box top">
+                                    <h5 class="title"><?php esc_html_e('Location', 'mec'); ?></h5>
+                                    <div class="content"><p><?php esc_attr_e('Choose one of saved locations or insert new one.', 'mec'); ?><a href="https://webnus.net/dox/modern-events-calendar/location/" target="_blank"><?php esc_html_e('Read More', 'mec'); ?></a></p></div>
+                                </div>
+                                <i title="" class="dashicons-before dashicons-editor-help"></i>
+                            </span>
+                            <button type="button" id="mec_popup_add_location"><?php esc_html_e('Add Location'); ?></button>
+                        </div>
+
+                        <?php if($this->getPRO()): ?>
+                        <div class="mec-form-row">
+                            <input type="hidden" name="mec[dont_show_map]" value="0" />
+                            <label for="mec_location_dont_show_map"><input type="checkbox" id="mec_location_dont_show_map" name="mec[dont_show_map]" value="1" <?php echo ($dont_show_map ? 'checked="checked"' : ''); ?> /><?php echo esc_html__("Don't show map in single event page", 'mec'); ?></label>
+                        </div>
+                        <?php endif; ?>
+
+                        <div id="mec_location_new_container">
+                            <div class="mec-form-row">
+                                <input type="text" name="mec[location][name]" id="mec_location_name" value="" placeholder="<?php esc_html_e('Location Name', 'mec'); ?>" />
+                                <div class="description"><?php esc_html_e('eg. City Hall', 'mec'); ?></div>
+                            </div>
+                            <div class="mec-form-row">
+                                <input type="text" name="mec[location][address]" id="mec_location_address" value="" placeholder="<?php esc_html_e('Event Location', 'mec'); ?>" />
+                                <div class="description"><?php esc_html_e('eg. City hall, Manhattan, New York', 'mec'); ?></div>
+                            </div>
+                            <div class="mec-form-row mec-lat-lng-row">
+                                <input class="mec-has-tip" type="text" name="mec[location][latitude]" id="mec_location_latitude" value="" placeholder="<?php esc_html_e('Latitude', 'mec'); ?>" />
+                                <input class="mec-has-tip" type="text" name="mec[location][longitude]" id="mec_location_longitude" value="" placeholder="<?php esc_html_e('Longitude', 'mec'); ?>" />
+                                <span class="mec-tooltip">
+                                    <div class="box top">
+                                        <h5 class="title"><?php esc_html_e('Latitude/Longitude', 'mec'); ?></h5>
+                                        <div class="content"><p><?php esc_attr_e('If you leave the latitude and longitude empty, Modern Events Calendar tries to convert the location address to geopoint, Latitude and Longitude are the units that represent the coordinates at geographic coordinate system. To make a search, use the name of a place, city, state, or address, or click the location on the map to find lat long coordinates.', 'mec'); ?><a href="https://latlong.net" target="_blank"><?php esc_html_e('Get Latitude and Longitude', 'mec'); ?></a></p></div>
+                                    </div>
+                                    <i title="" class="dashicons-before dashicons-editor-help"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php if(!isset($settings['organizers_status']) || $settings['organizers_status']): ?>
+                <div class="mec-steps-content mec-steps-content-<?php echo $step++; ?>">
+                    <div id="mec-organizer">
+                        <div class="mec-form-row">
+                            <select name="mec[organizer_id]" id="mec_popup_organizer_id" class="mec_popup_organizer_id wn-mec-select-popup" title="<?php echo esc_attr__($this->main->m('taxonomy_organizer', esc_html__('Organizer', 'mec')), 'mec'); ?>">
+                                <option value="1"><?php esc_html_e('Hide organizer', 'mec'); ?></option>
+                                <?php foreach($organizers as $organizer): ?>
+                                    <option <?php if($organizer_id == $organizer->term_id) echo 'selected="selected"'; ?> value="<?php echo esc_attr($organizer->term_id); ?>"><?php echo esc_html($organizer->name); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <span class="mec-tooltip">
+                                <div class="box top">
+                                    <h5 class="title"><?php esc_html_e('Organizer', 'mec'); ?></h5>
+                                    <div class="content"><p><?php esc_attr_e('Choose one of saved organizers or insert new one below.', 'mec'); ?><a href="https://webnus.net/dox/modern-events-calendar/organizer-and-other-organizer/" target="_blank"><?php esc_html_e('Read More', 'mec'); ?></a></p></div>
+                                </div>
+                                <i title="" class="dashicons-before dashicons-editor-help"></i>
+                            </span>
+                            <button type="button" id="mec_popup_add_organizer"><?php esc_html_e('Add Organizer'); ?></button>
+                        </div>
+                        <div id="mec_organizer_new_container">
+                            <div class="mec-form-row">
+                                <div class="mec-col-6">
+                                    <input type="text" name="mec[organizer][name]" id="mec_organizer_name" value="" placeholder="<?php esc_html_e('Name', 'mec'); ?>" />
+                                    <p class="description"><?php esc_html_e('eg. John Smith', 'mec'); ?></p>
+                                </div>
+                                <div class="mec-col-6">
+                                    <input type="text" name="mec[organizer][tel]" id="mec_organizer_tel" value="" placeholder="<?php esc_attr_e('Phone number.', 'mec'); ?>" />
+                                    <p class="description"><?php esc_html_e('eg. +1 (234) 5678', 'mec'); ?></p>
+                                </div>
+                            </div>
+                            <div class="mec-form-row">
+                                <input type="text" name="mec[organizer][email]" id="mec_organizer_email" value="" placeholder="<?php esc_attr_e('Email address.', 'mec'); ?>" />
+                                <p class="description"><?php esc_html_e('eg. john@smith.com', 'mec'); ?></p>
+                            </div>
+                            <div class="mec-form-row">
+                                <div class="mec-col-12">
+                                    <input type="url" name="mec[organizer][url]" id="mec_organizer_url" value="" placeholder="<?php esc_html_e('Page URL', 'mec'); ?>" />
+                                    <p class="description"><?php esc_html_e('eg. https://webnus.net', 'mec'); ?></p>
+                                </div>
+                            </div>
+                            <div class="mec-form-row">
+                                <div class="mec-col-12">
+                                    <input type="text" name="mec[organizer][page_label]" id="mec_organizer_page_label" value="" placeholder="<?php esc_html_e('Page Label', 'mec'); ?>" />
+                                    <p class="description"><?php esc_html_e('eg. website name or any text', 'mec'); ?></p>
+                                </div>
+                            </div>
+                            <div class="mec-form-row">
+                                <div class="mec-col-5">
+                                    <div class="mec-form-row mec-thumbnail-row">
+                                        <input type="hidden" name="mec[organizer][thumbnail]" id="mec_organizer_thumbnail" value="" />
+                                        <button type="button" class="mec_organizer_upload_image_button button" id="mec_organizer_thumbnail_button"><?php echo esc_html__('Choose image', 'mec'); ?></button>
+                                    </div>
+                                </div>
+                                <div class="mec-col-7">
+                                    <div id="mec_organizer_thumbnail_img"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+                <div class="mec-steps-content mec-steps-content-<?php echo $step++; ?>">
+                    <div class="mec-categories-tabs">
+                        <ul>
+                            <li class="mec-categories-tab-selected" data-type="all"><?php esc_html_e('All Categories', 'mec'); ?></li>
+                            <li data-type="popular"><?php esc_html_e('Most Used', 'mec'); ?></li>
+                        </ul>
+                    </div>
+                    <div class="mec-categories-tab-contents mec-form-row">
+                        <ul>
+                            <?php wp_terms_checklist(0, array(
+                                'taxonomy' => 'mec_category',
+                            )); ?>
+                        </ul>
+                    </div>
+                    <div class="mec-categories-add-new">
+                        <span id="mec_popup_new_category_button"><?php esc_html_e('Add New Category', 'mec'); ?></span>
+                        <input type="text" id="mec_popup_new_category" placeholder="Press 'Enter' to add category" style="display: none;">
+                    </div>
+                </div>
+                <div class="mec-steps-content mec-steps-content-<?php echo $step++; ?>">
+                    <textarea id="mec_popup_content" name="mec[content]" rows="8"></textarea>
+                </div>
+                <div class="mec-steps-content mec-steps-content-<?php echo $step++; ?>">
+                    <div class="mec-event-popup-featured-image-wrapper">
+                        <div id="mec_event_popup_featured_image_preview"></div>
+                        <div class="mec-event-popup-featured-image-button">
+                            <button type="button" id="mec_popup_upload_image_button"><?php esc_html_e('Set Featured Image', 'mec'); ?></button>
+                            <input type="hidden" id="mec_event_popup_featured_image_thumbnail" name="mec[featured_image]" value="">
+                        </div>
+                    </div>
+                </div>
+                <div class="mec-steps-content mec-steps-content-<?php echo $step; ?>">
+                    <div class="mec-steps-<?php echo $step; ?>-loading"><div class="mec-loader"></div></div>
+                    <div class="mec-steps-<?php echo $step; ?>-results">
+                        <div class="mec-steps-<?php echo $step; ?>-results-wrap">
+                            <img src="<?php echo plugin_dir_url(__FILE__ ) . '../../../assets/img/popup/char.png'; ?>" />
+                            <h3><?php esc_html_e('Your Event Has Been Created.', 'mec'); ?></h3>
+                            <div class="mec-popup-final-buttons">
+                                <a class="mec-button-view" href="#"><?php esc_html_e('View Event', 'mec'); ?></a>
+                                <button class="mec-button-new"><?php esc_html_e('New Event', 'mec'); ?></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mec-next-previous-buttons">
+            <button class="mec-button-prev"><?php esc_html_e('Prev', 'mec'); ?><img src="<?php echo plugin_dir_url(__FILE__ ) . '../../../assets/img/popup/popup-prev-icon.svg'; ?>" /></button>
+            <button class="mec-button-next"><?php esc_html_e('Next', 'mec'); ?><img src="<?php echo plugin_dir_url(__FILE__ ) . '../../../assets/img/popup/popup-next-icon.svg'; ?>" /></button>
+        </div>
+    </div>
+</div>
+<?php if(!isset($settings['event_as_popup']) or (isset($settings['event_as_popup']) && $settings['event_as_popup'] == '1') or $wizard_page == "MEC-wizard"): ?>
+<?php
+$this->getFactory()->params('footer', function() use($main_page, $wizard_page, $post_type, $settings, $step)
+{
+    ?>
+    <script>
+    jQuery(document).ready(function()
+    {
+        var redirect = true;
+        var popup_wpeditor = false;
+        var current_step;
+
+        var $event_wrap = jQuery("#mec_popup_event");
+        var $e_prev = $event_wrap.find('.mec-button-prev');
+        var $e_next = $event_wrap.find('.mec-button-next');
+        var $e_new = $event_wrap.find('.mec-button-new');
+        var $e_copy = $event_wrap.find('.mec-button-copy');
+        var $e_steps = $event_wrap.find('.mec-step');
+        var $e_name = $event_wrap.find('#mec_event_name');
+        var $start_date = $event_wrap.find('#mec_start_date_popup');
+        var $end_date = $event_wrap.find('#mec_end_date_popup');
+        var $location_add = $event_wrap.find('#mec_popup_add_location');
+        var $location_dropdown = $event_wrap.find('#mec_popup_location_id');
+        var $organizer_add = $event_wrap.find('#mec_popup_add_organizer');
+        var $organizer_dropdown = $event_wrap.find('#mec_popup_organizer_id');
+        var $e_steps_content = $event_wrap.find('.mec-steps-content');
+
+        // Appending Div
+        jQuery(document).on('lity:open', function(event, instance)
+        {
+            jQuery('.mec-time-picker select').addClass('wn-mec-select-popup').niceSelect();
+        });
+
+        if(jQuery('.mec-steps-content .wn-mec-select-popup').length > 0) jQuery('.mec-steps-content .wn-mec-select-popup').niceSelect();
+
+        // Add Event Button
+        jQuery('.mec-wizard-open-popup.add-event,.wrap .page-title-action').on('click', function(e)
+        {
+            e.preventDefault();
+
+            if(jQuery(".mec-wizard-open-popup.add-event").length > 0)
+            {
+                jQuery(".mec-wizard-open-popup.add-event").addClass("active");
+                jQuery(".mec-wizard-open-popup.add-shortcode").removeClass("active");
+                jQuery(".mec-wizard-open-popup.mec-settings").removeClass("active");
+                jQuery(".mec-wizard-starter-video a").removeClass("active");
+            }
+
+            // Open Lightbox
+            lity('#mec_popup_event');
+
+            // Do Step
+            mec_event_step(1, 'next');
+        });
+
+        // Lightbox Open
+        jQuery(document).on('lity:open', function(event, instance)
+        {
+            <?php if ($main_page == "mec-events") { ?>
+                jQuery('.lity').removeClass('mec-add-shortcode-popup');
+                jQuery('.lity').addClass('mec-add-event-popup');
+            <?php } ?>
+
+            if ( jQuery(".mec-wizard-open-popup.add-event").hasClass("active") ) {
+                jQuery('.lity').addClass('mec-add-event-popup');
+            }
+            jQuery('body').css('overflow', 'hidden');
+            jQuery('.lity-wrap').removeAttr('data-lity-close');
+        });
+
+        // Lightbox Close
+        <?php if ( $wizard_page != "MEC-wizard" && !isset($_REQUEST['adminview']) ) { ?>
+        jQuery(document).on('lity:close', function(event, instance)
+        {
+            if(redirect) window.location.href = "<?php echo admin_url('post-new.php?post_type='.$post_type); ?>";
+        });
+        <?php } ?>
+        // Previous
+        $e_prev.on('click', function()
+        {
+            var new_step = parseInt(current_step)-1;
+            if(new_step <= 0) new_step = 1;
+
+            mec_event_step(new_step, 'prev');
+        });
+
+        // Next
+        $e_next.on('click', function()
+        {
+            var new_step = parseInt(current_step)+1;
+            if(new_step > <?php echo $step; ?>) new_step = <?php echo $step; ?>;
+
+            mec_event_step(new_step, 'next');
+        });
+
+        // New
+        $e_new.on('click', function()
+        {
+            $e_name.val('');
+            $start_date.val('');
+            $end_date.val('');
+
+            mec_event_step(1, 'next');
+        });
+
+        // Copy
+        $e_copy.on('click', function()
+        {
+            var $temp = jQuery("<input>");
+            jQuery("body").append($temp);
+
+            $temp.val(jQuery('.mec-popup-event code').text()).select();
+
+            document.execCommand("copy");
+            $temp.remove();
+        });
+
+        // on Submit of Shortcode Name
+        $e_name.keyup(function(e)
+        {
+            if(e.keyCode === 13)
+            {
+                mec_event_step(2, 'next');
+            }
+        });
+
+        $location_add.on('click', function()
+        {
+            $location_dropdown.val(0).trigger('change');
+            jQuery('#mec_location_new_container').show();
+        });
+
+        $location_dropdown.on('change', function()
+        {
+            jQuery('#mec_location_new_container').hide();
+        });
+
+        $organizer_add.on('click', function()
+        {
+            $organizer_dropdown.val(0).trigger('change');
+            jQuery('#mec_organizer_new_container').show();
+        });
+
+        $organizer_dropdown.on('change', function()
+        {
+            jQuery('#mec_organizer_new_container').hide();
+        });
+
+        // Category Tabs
+        jQuery('.mec-categories-tabs li').on('click', function()
+        {
+            jQuery('.mec-categories-tabs li').removeClass('mec-categories-tab-selected');
+            jQuery(this).addClass('mec-categories-tab-selected');
+
+            var type = jQuery(this).data('type');
+            if(type === 'popular')
+            {
+                jQuery('.mec-categories-tab-contents li').hide();
+                jQuery('.mec-categories-tab-contents li.popular-category').show();
+            }
+            else jQuery('.mec-categories-tab-contents li').show();
+        });
+
+        // Add New Category
+        var $new_category_button = jQuery('#mec_popup_new_category_button');
+        var $new_category = jQuery('#mec_popup_new_category');
+
+        $new_category_button.on('click', function()
+        {
+            $new_category.toggle();
+        });
+
+        $new_category.keyup(function(e)
+        {
+            if(e.keyCode === 13)
+            {
+                var category = $new_category.val();
+
+                jQuery.ajax(
+                {
+                    type: "POST",
+                    url: ajaxurl,
+                    data: "action=mec_popup_event_category&category="+category,
+                    dataType: "json",
+                    success: function(data)
+                    {
+                        if(data.success)
+                        {
+                            $new_category.val('').hide();
+                            jQuery('.mec-categories-tab-contents ul').prepend('<li id="mec_category-'+data.id+'"><label class="selectit"><input value="'+data.id+'" type="checkbox" checked="checked" name="tax_input[mec_category][]" id="in-mec_category-'+data.id+'"> '+data.name+'</label></li>');
+                        }
+                    },
+                    error: function(jqXHR, textStatus, errorThrown)
+                    {
+                    }
+                });
+            }
+        });
+
+        // Featured Image Picker
+        jQuery('#mec_popup_upload_image_button').click(function(event)
+        {
+            event.preventDefault();
+
+            var frame;
+            if(frame)
+            {
+                frame.open();
+                return;
+            }
+
+            frame = wp.media();
+            frame.on('select', function()
+            {
+                // Grab the selected attachment.
+                var attachment = frame.state().get('selection').first();
+
+                jQuery('#mec_event_popup_featured_image_preview').html('<img src="'+attachment.attributes.url+'" /><span><i class="mec-sl-close"></i></span>');
+                jQuery('#mec_event_popup_featured_image_thumbnail').val(attachment.id);
+                jQuery('.mec-event-popup-featured-image-button').hide();
+
+                jQuery("#mec_event_popup_featured_image_preview span i").on("click", function()
+                {
+                    jQuery('#mec_event_popup_featured_image_preview').html('');
+                    jQuery('#mec_event_popup_featured_image_thumbnail').val('');
+                    jQuery('.mec-event-popup-featured-image-button').show();
+                });
+
+                frame.close();
+            });
+
+            frame.open();
+        });
+
+        // Do Step
+        function mec_event_step(step, type)
+        {
+            // Validation
+            if(step === 2)
+            {
+                var name = $e_name.val();
+                if(name === '')
+                {
+                    $e_name.addClass('mec-required').focus();
+                    jQuery('.popup-sh-name-required').show();
+                    return false;
+                }
+            }
+            else if(step === 3)
+            {
+                var start_date = $start_date.val();
+                if(start_date === '')
+                {
+                    $start_date.addClass('mec-required').focus();
+                    return false;
+                }
+
+                var end_date = $end_date.val();
+                if(end_date === '')
+                {
+                    $end_date.addClass('mec-required').focus();
+                    return false;
+                }
+            }
+            else if(step === 4)
+            {
+                var location_id = $location_dropdown.val();
+                var $location_name = jQuery('#mec_location_name');
+
+                if(location_id === '0' && $location_name.val() === '')
+                {
+                    $location_name.addClass('mec-required').focus();
+                    return false;
+                }
+            }
+            else if(step === 5)
+            {
+                var organizer_id = $organizer_dropdown.val();
+                var $organizer_name = jQuery('#mec_organizer_name');
+
+                if(organizer_id === '0' && $organizer_name.val() === '')
+                {
+                    $organizer_name.addClass('mec-required').focus();
+                    return false;
+                }
+            }
+
+            // Auto Focus
+            if(step === 1)
+            {
+                $e_name.focus();
+            }
+            // Init WP Editor
+            else if(step === <?php echo (!isset($settings['organizers_status']) || $settings['organizers_status']) ? 6 : 5; ?> && !popup_wpeditor)
+            {
+                popup_wpeditor = true;
+                wp.editor.initialize('mec_popup_content',
+                {
+                    tinymce: {
+                        wpautop: true,
+                        plugins : 'charmap colorpicker compat3x directionality fullscreen hr image lists media paste tabfocus textcolor wordpress wpautoresize wpdialogs wpeditimage wpemoji wpgallery wplink wptextpattern wpview',
+                        toolbar1: 'bold italic underline strikethrough | bullist numlist | blockquote hr wp_more | alignleft aligncenter alignright | link unlink image | fullscreen | wp_adv',
+                        toolbar2: 'formatselect alignjustify forecolor | pastetext removeformat charmap | outdent indent | undo redo | wp_help'
+                    },
+                    quicktags: false,
+                    mediaButtons: true
+                });
+            }
+
+            current_step = step;
+
+            // Buttons
+            $e_prev.show();
+            $e_next.show();
+
+            if(step === 1)
+            {
+                $e_prev.hide();
+            }
+            else if(step === <?php echo $step; ?>)
+            {
+                $e_prev.hide();
+                $e_next.hide();
+            }
+
+            // Disable Redirection
+            redirect = (step !== <?php echo $step; ?>);
+
+            // Steps Bar
+            $e_steps.removeClass('mec-step-passed');
+            for(var i = 1; i <= step; i++) jQuery('.mec-step-'+i).addClass('mec-step-passed');
+
+            // Content
+            $e_steps_content.hide();
+            $e_steps_content.removeClass('mec-steps-content-active');
+
+            jQuery('.mec-steps-content-'+step).addClass('mec-steps-content-active').show();
+            jQuery('.mec-steps-content-container').removeClass('mec-steps-content-1 mec-steps-content-2 mec-steps-content-3 mec-steps-content-4 mec-steps-content-5 mec-steps-content-6 mec-steps-content-7 mec-steps-content-8').addClass('mec-steps-content-'+step);
+
+            // Save event
+            if(step === <?php echo $step; ?>) return mec_event_save();
+        }
+
+        function mec_event_save()
+        {
+            // Show Loading
+            jQuery(".mec-steps-<?php echo $step; ?>-loading").show();
+            jQuery(".mec-steps-<?php echo $step; ?>-results").hide();
+
+            var form = jQuery("#mec_popup_event_form :input").serialize();
+            form += '&mec[content]='+tinyMCE.get('mec_popup_content').getContent();
+
+            jQuery.ajax(
+            {
+                type: "POST",
+                url: ajaxurl,
+                data: "action=mec_popup_event&"+form,
+                dataType: "json",
+                success: function(data)
+                {
+                    if(data.success)
+                    {
+                        var $view = jQuery('.mec-button-view');
+                        $view.attr('href', data.link);
+
+                        jQuery(".mec-steps-<?php echo $step; ?>-loading").hide();
+                        jQuery(".mec-steps-<?php echo $step; ?>-results").show();
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown)
+                {
+                }
+            });
+        }
+    });
+    </script>
+    <?php
+}); ?>
+<?php endif; ?>
