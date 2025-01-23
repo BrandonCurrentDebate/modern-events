@@ -1,0 +1,138 @@
+#webnus-dashboard .mec-cmsg-2-notification-box-wrap,#webnus-dashboard .mec-cmsg-notification-box-wrap {
+    margin-top:30px !important;
+}
+
+body[class^="page_MEC-settings"] .w-clearfix.w-box.mec-cmsg-notification-box-wrap {
+    margin-top: 0;
+}
+body[class*="page_MEC-settings"] .mec-custom-msg-notification-set-box.extra, body[class*="page_MEC-settings"] .mec-custom-msg-2-notification-set-box.extra{
+    font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Oxygen,Roboto,sans-serif;
+    max-width:1018px;
+    border-radius: 11px;
+    overflow:hidden;
+    margin-right: auto;
+    margin-left: auto;
+    margin-top:25px;
+    margin-bottom:27px
+}
+.mec-addons-key-features ul {
+    margin: 5px 0 15px;
+}
+.mec-addons-key-features ul li {
+    margin-bottom: 1px;
+    font-size: 13px;
+    color: #717479;
+    padding-left: 18px;
+    position: relative;
+}
+.mec-addons-notification-box-content.mec-new-addons p{
+    font-size:14px;
+}
+.mec-new-addons .mec-addons-notification-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+.mec-addons-key-features ul li:before {
+    position: absolute;
+    left: -1px;
+    top: 6px;
+    color: #36da74;
+    background: none;
+    font-size: 13px;
+    font-weight: bold;
+    vertical-align: middle;
+    font-family: "simple-line-icons";
+    border-radius: 50%;
+    padding: 0;
+    width: 13px;
+    height: 13px;
+    line-height: 13px;
+    z-index: 3;
+    background: rgba(64, 241, 147, 0.12);
+    content: "\e080";
+}
+
+.mec-addons-notification-box-content.mec-new-addons a {
+    background: #1fcae4;
+    color: #fff!important;
+    padding: 6px 20px;
+    margin-top: 3px;
+    margin-bottom: 12px;
+    display: inline-block;
+    border-radius: 60px;
+    text-transform: none;
+    font-size: 13px;
+    letter-spacing: .4px;
+    transition: all .1s ease;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 0 0 3px rgb(56 213 237 / 8%) !important;
+}
+
+.mec-addons-notification-box-content.mec-new-addons a:hover {
+    background: #1fcae4;
+    box-shadow: 0 0 0 4px rgb(56 213 237 / 15%) !important;
+}
+
+.mec-new-addons-wrap .mec-addons-notification-box-image {
+    width: 590px;
+    display: inline-block;
+    vertical-align: top;
+}
+body[class*="page_MEC-settings"] .mec-new-addons-wrap .mec-addons-notification-box-image {
+    width: 450px;
+}
+
+.mec-new-addons-wrap .mec-addons-notification-box-content {
+    width: calc(100% - 590px);
+    display: inline-block;
+    padding-left: 20px;
+}
+
+.mec-new-addons-wrap .mec-addons-notification-box-image img {
+    max-width: 590px;
+}
+body[class*="page_MEC-settings"] .mec-new-addons-wrap .mec-addons-notification-box-image img {
+    max-width: 450px;
+}
+
+body[class*="page_MEC-settings"] .mec-new-addons-wrap .mec-addons-notification-box-content {
+    width: calc(100% - 470px);
+}
+.mec-new-addons-wrap .w-box-content code {
+    display: block;
+    margin-bottom: 6px;
+}
+
+@media(max-width:480px) {
+  
+    .mec-new-addons-wrap .mec-addons-notification-box-content {
+        width: 100%;
+        padding: 0;
+    }
+
+    .mec-addons-notification-box-content .w-box-content {
+        padding-top: 30px;
+        padding-bottom: 30px;
+        padding-left: 0;
+    }
+  
+    .mec-new-addons-wrap .mec-addons-notification-box-image {
+        width: 100% !important;
+    }
+
+    body[class*="page_MEC-settings"] .mec-new-addons-wrap .mec-addons-notification-box-content {
+        width: 100% !important;
+        padding: 0 !important;
+    }
+
+    body[class*="page_MEC-settings"] .mec-new-addons-wrap .mec-addons-notification-box-content .w-box-content {
+        padding: 0;
+    }
+
+}
+
+#webnus-dashboard .mec-new-addons-wrap {
+    margin-top: 30px !important;
+}

@@ -1,0 +1,1 @@
+<span><?php esc_html_e('No search result.', 'mec'); ?></span>
