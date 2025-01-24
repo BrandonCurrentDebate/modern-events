@@ -8,7 +8,7 @@
  *   Author URI: https://webnus.net
  *   Developer: Webnus
  *   Developer URI: https://webnus.net
- *   Version: 7.12.0
+ *   Version: 7.13.b
  *   Text Domain: mec
  *   Domain Path: /languages
  **/
@@ -33,7 +33,7 @@ if (!defined('MECEXEC')) {
     define('MEC_BASENAME', plugin_basename(__FILE__)); // modern-events-calendar/mec.php
 
     /** Plugin Version **/
-    define('MEC_VERSION', '7.12.0');
+    define('MEC_VERSION', '7.13.0');
 
     /** API URL **/
     define('MEC_API_ACTIVATION', 'https://my.webnus.net/api/v3');
@@ -41,6 +41,12 @@ if (!defined('MECEXEC')) {
 
     /** Include Webnus MEC class if not included before **/
     if (!class_exists('MEC')) require_once MEC_ABSPATH . 'mec-init.php';
+
+    /** Include Security Enhancements **/
+    require_once MEC_ABSPATH . 'includes/security-enhancements.php';
+
+    /** Initialize Security Enhancements **/
+    new MEC_Security_Enhancements();
 
     /** Initialize Webnus MEC Plugin **/
     $MEC = MEC::instance();
